@@ -4,7 +4,7 @@ function SFO_check
 %----------------------------------------------------------------------------------------------
 n_time  = 20;                                                % number of weeks
 
-[ a,p,s_required,y0,c_store,c_cust_0,n_foods,lbl_foods ] = set_parameters();
+[ a,p,s_required,y0,c_store,c_cust_0,n_foods,t_ordinance,lbl_foods ] = set_parameters();
 
 [ y_supply,s_actual,y_demand,y_cust,y_waste,s_actual_end,m_profit,c_cust ] = ...
     deal( zeros(n_time,n_foods) );
@@ -15,9 +15,14 @@ c_cust(1:2,:)    = ones(2,1)*c_cust_0;                       % initial cost
 
 for i=3:n_time                                               % begin at time step 3
     for j=1:n_foods
+        if i>=t_ordinance(j)
+            s_required_j = s_required(j);
+        else
+            s_required_j = 0;
+        end
         [ y_supply(i,j),s_actual(i,j),y_demand(i,j),y_cust(i,j),y_waste(i,j),...
             s_actual_end(i,j),m_profit(i,j),c_cust(i,j) ] = ...
-            calc_foods( a(j), p(:,j), s_required(j), y0(j), c_store(j), ...
+            calc_foods( a(j), p(:,j), s_required_j, y0(j), c_store(j), ...
             y_demand(i-1,j), s_actual_end(i-1,j), s_actual_all(i-2), c_cust(i-1,j) );
     end
     s_actual_all(i) = sum(s_actual(i,:));                    % add all of s_actual
@@ -53,7 +58,8 @@ subplot(4,2,6), xlabel('weeks')
 subplot(4,2,7), xlabel('weeks')
 
 
-function [ a,p,s_required,y0,c_store,c_cust_0,n_foods,lbl_foods ] = set_parameters()
+function [ a,p,s_required,y0,c_store,c_cust_0,n_foods,t_ordinance,lbl_foods ] = ...
+    set_parameters()
 %----------------------------------------------------------------------------------------------
 % set the parameters of the foods
 %----------------------------------------------------------------------------------------------
@@ -64,6 +70,8 @@ n_foods   = length(lbl_foods);
 [ a,s_required,y0,c_store ] = deal( ones(1,n_foods) );
 
 c_cust_0  = [ 3.1 4 6.9 ];
+
+t_ordinance = [ 3 5 7 ];                                     % time of ordinance
 
 p = ones(18,n_foods)./[10 8 5];
 
