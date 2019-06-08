@@ -1,4 +1,4 @@
-function SFO_check
+function SFO_max_profit
 %----------------------------------------------------------------------------------------------
 % Check the SFO algorithm
 %----------------------------------------------------------------------------------------------
@@ -87,7 +87,17 @@ y_supply  = max([
     s_required - s_actual_end_1                              % satisfy s_required
     y_demand_1 - s_actual_end_1                              % satisfy previous week demand
     0 ]);                                                    % must be positive
-s_actual  = y_supply + s_actual_end_1;                       % s at beginning of week
+s_actual   = y_supply + s_actual_end_1;                      % s at beginning of week
+c_cust_opt = fminbnd( @(c1) ...
+    profit_neg( y_supply, y0, c1, a, p, s_actual_all_2, s_actual, c_store ), 0, 1000 );
+
+[ m_profit_neg,y_demand,y_cust,y_waste,s_actual_end,c_cust ] = ...
+    profit_neg( y_supply, y0, c_cust_opt, a, p, s_actual_all_2, s_actual, c_store );
+m_profit = -m_profit_neg;
+
+
+function [ m_profit_neg,y_demand,y_cust,y_waste,s_actual_end,c_cust ] = ...
+    profit_neg( y_supply, y0, c_cust_1, a, p, s_actual_all_2, s_actual, c_store )
 y_demand  = y0 - c_cust_1/a + p(18)*s_actual_all_2;          % price->decrease, s_all->increase
 y_cust    = min( y_demand, s_actual );                       % min of demand and s
 s_waste   = s_actual/p(16);                                  % amount that must be discarded
@@ -95,8 +105,8 @@ s_actual_after_cust = s_actual - y_cust;                     % s after cust purc
 y_waste   = min( s_waste, s_actual_after_cust );             % amount left over
 s_actual_end = s_actual_after_cust - y_waste;
 c_cust    = c_cust_1;                                        % temporarily use constant cost
-m_profit  = c_cust*y_cust - y_supply*c_store - ...
-    (p(4) + p(17)*s_actual_all_2)*s_actual - p(2)*y_supply;
-
-% keyboard
-
+m_profit  = c_cust*y_cust ...                                % revenue
+    - y_supply*c_store ...                                   % cost of y
+    -(p(4) + p(17)*s_actual_all_2)*s_actual ...              % cost of storage
+    - p(2)*y_supply;                                         % cost of delivery
+m_profit_neg = -m_profit;
