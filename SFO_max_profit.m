@@ -90,9 +90,13 @@ y_supply  = max([
 s_actual  = y_supply + s_actual_end_1;                       % s at beginning of week
 y_demand  = y0 - c_cust_1/a + p(18)*s_actual_all_2;          % price->decrease, s_all->increase
 y_cust    = min( y_demand, s_actual );                       % min of demand and s
-y_waste   = max( s_actual/p(16) - y_cust, 0 );
-s_actual_end = s_actual - y_cust - y_waste;
+s_waste   = s_actual/p(16);                                  % amount that must be discarded
+s_actual_after_cust = s_actual - y_cust;                     % s after cust purchase
+y_waste   = min( s_waste, s_actual_after_cust );             % amount left over
+s_actual_end = s_actual_after_cust - y_waste;
 c_cust    = c_cust_1;                                        % temporarily use constant cost
 m_profit  = c_cust*y_cust - y_supply*c_store - ...
     (p(4) + p(17)*s_actual_all_2)*s_actual - p(2)*y_supply;
+
+% keyboard
 
