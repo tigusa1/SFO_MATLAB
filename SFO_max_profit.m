@@ -36,7 +36,7 @@ function plot_results( y_supply,s_actual,y_demand,y_cust,y_waste,m_profit,c_cust
 %----------------------------------------------------------------------------------------------
 % plot all results
 %----------------------------------------------------------------------------------------------
-fig = figure(100); fig.Name = 'time series'; clf
+fig = figure(110); fig.Name = 'time series'; clf
 subplot(4,2,1), plot(y_supply), title('y supply')
 subplot(4,2,2), plot(y_demand), title('y demand')
 subplot(4,2,3), plot(y_cust),   title('y cust')
@@ -56,25 +56,6 @@ end
 subplot(4,2,1), legend(lbl_foods)                           % set legend for one plot
 subplot(4,2,6), xlabel('weeks')
 subplot(4,2,7), xlabel('weeks')
-
-
-function [ a,p,s_required,y0,c_store,c_cust_0,n_foods,t_ordinance,lbl_foods ] = ...
-    set_parameters()
-%----------------------------------------------------------------------------------------------
-% set the parameters of the foods
-%----------------------------------------------------------------------------------------------
-lbl_foods = {'food A','food B','food C'};
-
-n_foods   = length(lbl_foods);
-
-[ a,s_required,y0,c_store ] = deal( ones(1,n_foods) );
-
-c_cust_0  = [ 3.1 4 6.9 ];
-
-t_ordinance = [ 3 5 7 ];                                     % time of ordinance
-
-p = ones(18,n_foods)./[10 8 5];
-
 
 
 function [ y_supply,s_actual,y_demand,y_cust,y_waste,s_actual_end,m_profit,c_cust ] = ...
