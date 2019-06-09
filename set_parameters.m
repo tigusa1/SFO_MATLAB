@@ -12,9 +12,16 @@ lbl_foods = {'Orange','Broccoli','Canned Fruit Juice'};
 n_foods   = length(lbl_foods);
 
 % [ a,s_required,y0,c_store ] = deal( ones(1,n_foods) );
-[ a,s_required,y0,c_store ] = deal( [0.1866;0.3095;0.2363], [2;2;2], [13.3437;7.7868;9.8032], [0.3;0.2;1.2]);
+% [ a,s_required,y0,c_store ] = deal( [0.1866;0.3095;0.2363], [2;2;2], [13.3437;7.7868;9.8032], [0.3;0.2;1.2]);
+a = [0.1866;0.3095;0.2363];
 
-c_cust_0  = [ 0.6 0.4 1.9 ];
+s_required = [2;2;2];
+
+y0 = [13.3437;7.7868;9.8032];
+
+c_store = [0.3;0.2;1.2];
+
+c_cust_0  = [ 0 0 0 ];
 
 t_ordinance = [ 3 5 7 ];                                     % time of ordinance
 
