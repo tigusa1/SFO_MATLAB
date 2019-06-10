@@ -89,9 +89,10 @@ for i_plot=1:num_plots
     end
 end
 
-subplot(4,2,1), legend(lbl_foods)                           % set legend for one plot
 subplot(4,2,6), xlabel('weeks')
 subplot(4,2,7), xlabel('weeks')
+subplot(4,2,8), ax = gca; ax.XTick = []; ax.YTick = []; ax.Visible = 'off';
+subplot(4,2,1), legend(lbl_foods,'NumColumns',2,'Position',ax.Position)
 
 
 function [ y_supply,s_actual,y_demand,y_cust,y_waste,s_actual_end,m_profit,c_cust_profit, ...
