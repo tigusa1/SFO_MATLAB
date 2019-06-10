@@ -9,8 +9,8 @@ n_time  = 20;                                                % number of weeks
 [ y_supply,s_actual,y_demand,y_cust,y_waste,s_actual_end,m_profit,c_cust_profit ] = ...
     deal( zeros(n_time,n_foods) );
 
-c_custs_n        = 40;                                       % number of costs for plotting
-c_cust_max       = 3.2;
+c_custs_n        = 300;                                      % number of costs for plotting
+c_cust_max       = 10;
 [ m_profits,y_resupplies ] = deal( zeros(c_custs_n,n_time,n_foods) );
 c_custs          = linspace(0,c_cust_max,c_custs_n);
 c_cust_opt       = zeros(3,n_time,n_foods);
@@ -53,11 +53,16 @@ n_row = ceil(n_foods/n_col);                      % number of rows
 fig = figure(figno); fig.Name = fig_lbl; clf
 for j=1:n_foods
     subplot(n_row,n_col,j)
-    imagesc(1:n_time,c_custs,m_profits(:,:,j)), hold on
-    plot(   1:n_time,c_cust_profit(:,j),'k-','LineWidth',2)
-    plot(   1:n_time,c_cust_opt(:,:,j), 'r:','LineWidth',2), hold off
-    xlabel('week'), ylabel('cost'), ax = gca;
-    ax.YDir = 'normal';
+    c_cust_profit_j = c_cust_profit(:,j);
+    c_cust_opt_j    = c_cust_opt(:,:,j);
+    c_max           = max([c_cust_profit_j ; c_cust_opt_j(:)]);    % maximum c_cust
+    c_index         = find(c_custs<c_max*1.25);                    % indeces for plotting
+    imagesc(1:n_time,c_custs(c_index),m_profits(c_index,:,j)), hold on
+    plot(   1:n_time,c_cust_profit_j,'k-','LineWidth',2)
+    plot(   1:n_time,c_cust_opt_j,   'r:','LineWidth',2), hold off
+    if n_foods-j<n_col, xlabel('week'), end
+    if mod(j,n_col)==1, ylabel('cost'), end
+    ax = gca; ax.YDir = 'normal';
     title(lbl_foods{j}), colorbar
 end
 
@@ -121,8 +126,8 @@ function [ m_profit_neg,y_resupply,c_cust_opt,y_demand,y_cust,y_waste,s_actual_e
 % negative profit
 %----------------------------------------------------------------------------------------------
 y0_all      = y0   + p(18)*s_actual_all_2;                   % extra demand due to other foods
-c_storage   = (p(3)+2*p(4)) + p(17)*s_actual_all_2;                   % extra cost due to all foods
-c_store_all = c_store + p(1) + p(2)*3;                                % purchase cost + delivery
+c_storage   = p(4) + p(17)*s_actual_all_2;                   % extra cost due to all foods
+c_store_all = c_store + p(2);                                % purchase cost + delivery
 
 y_demands(1) = y0_all/2 - (c_store_all + c_storage)/(2*a);   % y_demand > s_actual
 y_demands(2) = y0_all/2 - (c_store_all            )/(2*a);   % intermediate
