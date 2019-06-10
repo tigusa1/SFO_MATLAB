@@ -121,8 +121,8 @@ function [ m_profit_neg,y_resupply,c_cust_opt,y_demand,y_cust,y_waste,s_actual_e
 % negative profit
 %----------------------------------------------------------------------------------------------
 y0_all      = y0   + p(18)*s_actual_all_2;                   % extra demand due to other foods
-c_storage   = p(4) + p(17)*s_actual_all_2;                   % extra cost due to all foods
-c_store_all = c_store + p(2);                                % purchase cost + delivery
+c_storage   = (p(3)+2*p(4)) + p(17)*s_actual_all_2;                   % extra cost due to all foods
+c_store_all = c_store + p(1) + p(2)*3;                                % purchase cost + delivery
 
 y_demands(1) = y0_all/2 - (c_store_all + c_storage)/(2*a);   % y_demand > s_actual
 y_demands(2) = y0_all/2 - (c_store_all            )/(2*a);   % intermediate
