@@ -10,7 +10,7 @@ n_time  = 20;                                                % number of weeks
     deal( zeros(n_time,n_foods) );
 
 c_custs_n        = 40;                                       % number of costs for plotting
-c_cust_max       = 2.7;
+c_cust_max       = 3.2;
 [ m_profits,y_resupplies ] = deal( zeros(c_custs_n,n_time,n_foods) );
 c_custs          = linspace(0,c_cust_max,c_custs_n);
 c_cust_opt       = zeros(3,n_time,n_foods);
@@ -47,9 +47,12 @@ function plot_results_3D( c_custs, m_profits, c_cust_profit, n_time, n_foods, lb
 %----------------------------------------------------------------------------------------------
 % plot profits
 %----------------------------------------------------------------------------------------------
+n_col = ceil(n_foods/6);                          % number of columns in the figure
+n_row = ceil(n_foods/n_col);                      % number of rows
+
 fig = figure(figno); fig.Name = fig_lbl; clf
 for j=1:n_foods
-    subplot(n_foods,1,j)
+    subplot(n_row,n_col,j)
     imagesc(1:n_time,c_custs,m_profits(:,:,j)), hold on
     plot(   1:n_time,c_cust_profit(:,j),'k-','LineWidth',2)
     plot(   1:n_time,c_cust_opt(:,:,j), 'r:','LineWidth',2), hold off
