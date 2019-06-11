@@ -1,5 +1,5 @@
 function [ a,p,s_required,y0,c_store,c_cust_0,n_foods,t_ordinance,lbl_foods ] = ...
-    set_parameters()
+    set_parameters(flag_hypothetical)
 %----------------------------------------------------------------------------------------------
 % set the parameters of the foods
 %----------------------------------------------------------------------------------------------
@@ -8,6 +8,7 @@ function [ a,p,s_required,y0,c_store,c_cust_0,n_foods,t_ordinance,lbl_foods ] = 
 % CFJ_par = [0.2311,-0.0256,0.3443,-0.0291,7.46241583377826,-0.282166335872858/2, -0.282166335872858/2,-1.16520338785742,-0.300048124178850,0.939344611961531,1.27623869047736,( 7.46241583377826+(-0.282166335872858/2-0.282166335872858/2-1.16520338785742-0.300048124178850+0.939344611961531+1.27623869047736)*5)/2.31625,0.4550,0.0104,-0.0323, 5];
 
 % lbl_foods = {'Orange','Broccoli','Canned Fruit Juice'};
+
 lbl_foods = {'Fresh Oranges','Fresh Carrots','Tomatoes','Fresh Bananas','Canned Fruit in 100% Juice','Frozen Broccoli','Fresh Iceberg Lettuce',...
              'Whole Wheat Tortillas','Plain Oatmeal','Whole Wheat Pasta','Whole Wheat Bread','Whole Grain Cereal',...
              'Low-sugar Yogurt','Low-fat Cheese','Fat-free/skim Milk',...
@@ -16,7 +17,7 @@ lbl_foods = {'Fresh Oranges','Fresh Carrots','Tomatoes','Fresh Bananas','Canned 
 
 n_foods   = length(lbl_foods);
 
-% [ a,s_required,y0,c_store ] = deal( ones(1,n_foods) );
+
 % [ a,s_required,y0,c_store ] = deal( [0.1866;0.3095;0.2363], [2;2;2], [13.3437;7.7868;9.8032], [0.3;0.2;1.2]);
 p_original = ([
           0.0287,-0.0010,0.0535,-0.0015,-16.5178402214775,2.79508364248950/2, 2.79508364248950/2,-0.479453242578706,0.554963737373109,1.99362694396789,1.10808182780980,( -16.5178402214775+(2.79508364248950/2+ 2.79508364248950/2-0.479453242578706+0.554963737373109+1.99362694396789+1.10808182780980)*5)/2.49,0.4550,0.0104,-0.0323, 2, 0.015, 0.02;    %Oranges¡¤
@@ -42,55 +43,75 @@ p_original = ([
           0.0507, 0.0498,0.3508, 0.0495,3,0.15,0.19,0.19,0.16,0.15,0.11,1.410,1.6626,0.0485,-0.1052, 3, 0.015, 0.02;     %Soymilk
           0.1544,-0.0134,0.3464,-0.0375,2,0.18,0.11,0.20,0.14,0.13,0.19,1.350,0.4690,0.1291,-0.0098,6, 0.015, 0.02       %Canned Beans
        ].');
+   
 p = zeros(18,22);
+
+x_delivery = 3;
+
+s_infra = 2;
+
 for i = 1:18
     if i == 2
-        p(2,:) = p_original(1,:)+3*p_original(2,:); 
+        p(2,:) = p_original(1,:) + x_delivery * p_original(2,:); 
     elseif i == 4
-        p(4,:) = p_original(3,:)+2*p_original(4,:);
+        p(4,:) = p_original(3,:) + s_infra * p_original(4,:);
     else
         p(i,:) = p_original(i,:);
     end
 end
+
+if nargin > 0 && flag_hypothetical
+    y0_e = 2; a_e = 1/2; n_life_e = 2; s_required_e = 2;
+    %Use Fresh Orange as an example
+    %Condition 1: y_demand > s_actual
+    c_store_e = 0.3; c_storage_e = p(4,1);
+    y_demand_max_1 = y0_e / 2 - (c_store_e + c_storage_e) / (2 * a_e)
+    m_profit_max_1 = (a_e * (y0_e - y_demand_max_1) - c_store_e - c_storage_e) * y_demand_max_1
     
-% p(2,:) = p_original(1,:)+3*p_original(2,:); 
-% p(4,:) = p_original(3,:)+2*p_original(4,:);
+    %Condition 2: s_actual  > y_demand > s_actual / n_life
+    y_demand_max_2 = y0_e / 2 - c_store_e / (2 * a_e)
+    m_profit_max_2 = (a_e * (y0_e - y_demand_max_2) - c_store_e) * y_demand_max_2 - c_storage_e * s_required_e
+    
+    %Condition 3: y_demand < s_actual / n_life
+    y_demand_max_3 = y0_e / 2
+    m_profit_max_3 = (a_e * (y0_e - y_demand_max_3)) * y_demand_max_3 - c_store_e * s_required_e / n_life_e - c_storage_e * s_required_e
 
-% a = [0.1866;0.3095;0.2363];
+    return
+end
+
+% a = zeros(n_foods,1);
 % 
-% s_required = [2;2;2];
+% s_required = zeros(n_foods,1);
 % 
-% y0 = [13.3437;7.7868;9.8032];
+% y0 = zeros(n_foods,1);
 % 
-% c_store = [0.3;0.2;1.2];
+% c_store = zeros(n_foods,1);
+
+% c_cust_0  = zeros(n_foods,1);
 % 
-% c_cust_0  = [ 0 0 0 ];
-% 
-% t_ordinance = [ 3 5 7 ];                                     % time of ordinance
+% t_ordinance = zeros(n_foods,1);                                    % time of ordinance
 
-a = zeros(n_foods,1);
+[ a,s_required,y0,c_store,c_cust_0,t_ordinance ] = deal( ones(n_foods,1) );
 
-s_required = zeros(n_foods,1);
+s_required = [2;2;2;2;2;2;4;1;2;4;6;1;6;10;1;1;5;6;6;1;3];
 
-y0 = zeros(n_foods,1);
+c_store = [0.3;0.2;0.2;0.3;1.2;0.2;0.2;1;1.2;1.2;1.7;1.5;1;1.2;1.7;3.5;3.2;2.5;2.2;2.3;1.5;1];
 
-c_store = zeros(n_foods,1);
+x_training = 5;
+x_signage = 5;
+x_convenience = 5;
+x_taste = 5;
+x_affordability = 5;
+x_healthiness = 5;
 
-c_cust_0  = zeros(n_foods,1);
 
-t_ordinance = zeros(n_foods,1);                                    % time of ordinance
+a = 1 ./ p(12,:);
 
-for i = 1:n_foods
-    a(i) = 1/p(12,i);
+y0 = p(5,:) + p(6,:) * x_training + p(7,:) * x_signage + p(8,:) * x_convenience + p(9,:) * x_taste + p(10,:) * x_affordability + p(11,:) * x_healthiness;
 
-    s_required = [2;2;2;2;2;2;4;1;2;4;6;1;6;10;1;1;5;6;6;1;3];
+t_ordinance = 2 * (1:n_foods)' + 1;                                     % time of ordinance
 
-    y0(i) = p(5,i)+p(6,i)*5+p(7,i)*5+p(8,i)*5+p(9,i)*5+p(10,i)*5+p(11,i)*5;
 
-    c_store = [0.3;0.2;0.2;0.3;1.2;0.2;0.2;1;1.2;1.2;1.7;1.5;1;1.2;1.7;3.5;3.2;2.5;2.2;2.3;1.5;1];
-
-    t_ordinance(i) = 2*i+1;                                     % time of ordinance
-end 
 
 % p = ones(18,n_foods)./[10 8 5];
 % p = ([0.0287,-0.0010,0.0535,-0.0015,-16.5178402214775,2.79508364248950/2, 2.79508364248950/2,-0.479453242578706,0.554963737373109,1.99362694396789,1.10808182780980,( -16.5178402214775+(2.79508364248950/2+ 2.79508364248950/2-0.479453242578706+0.554963737373109+1.99362694396789+1.10808182780980)*5)/2.49,0.4550,0.0104,-0.0323, 2, 0.015, 0.02;0.1455,-0.0062,0.3367,-0.0273,2.69842890949335,0.566241572059529/2, 0.566241572059529/2,0.335432030763894,0.789696747146486,0.796548752001795,-1.47023827738507,( 2.69842890949335+(0.566241572059529/2+0.566241572059529/2+0.335432030763894+0.789696747146486+0.796548752001795-1.47023827738507)*5)/2.41,0.5567,0.0565,-0.0237, 4, 0.015, 0.02;0.2311,-0.0256,0.3443,-0.0291,7.46241583377826,-0.282166335872858/2, -0.282166335872858/2,-1.16520338785742,-0.300048124178850,0.939344611961531,1.27623869047736,( 7.46241583377826+(-0.282166335872858/2-0.282166335872858/2-1.16520338785742-0.300048124178850+0.939344611961531+1.27623869047736)*5)/2.31625,0.4550,0.0104,-0.0323, 5, 0.015, 0.02].');
