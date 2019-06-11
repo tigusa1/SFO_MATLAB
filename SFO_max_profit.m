@@ -3,8 +3,10 @@ function SFO_max_profit
 % Check the SFO algorithm
 %----------------------------------------------------------------------------------------------
 n_time  = 20;                                                % number of weeks
+flag_three_hypothetical_foods = true;
 
-[ a,p,s_required,y0,c_store,c_cust_0,n_foods,t_ordinance,lbl_foods ] = set_parameters();
+[ a,p,s_required,y0,c_store,c_cust_0,n_foods,t_ordinance,lbl_foods ] = ...
+    set_parameters(flag_three_hypothetical_foods);
 
 [ y_supply,s_actual,y_demand,y_cust,y_waste,s_actual_end,m_profit,c_cust_profit ] = ...
     deal( zeros(n_time,n_foods) );
