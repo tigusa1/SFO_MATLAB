@@ -8,14 +8,15 @@ flag_three_hypothetical_foods = true;
 [ a,p,s_required,y0,c_store,c_cust_0,n_foods,t_ordinance,lbl_foods ] = ...
     set_parameters(flag_three_hypothetical_foods);
 
-[ y_supply,s_actual,y_demand,y_cust,y_waste,s_actual_end,m_profit,c_cust_profit ] = ...
+[ y_supply,s_actual,y_demand,y_cust,y_waste,s_actual_end,m_profit,m_profit_actual,c_cust_profit ] = ...
     deal( zeros(n_time,n_foods) );
 
 c_custs_n        = 300;                                      % number of costs for plotting
 c_cust_max       = 10;
+
 [ m_profits,y_resupplies ] = deal( zeros(c_custs_n,n_time,n_foods) );
 c_custs          = linspace(0,c_cust_max,c_custs_n);
-c_cust_opt       = zeros(3,n_time,n_foods);
+[ c_cust_opt,y_demands   ] = deal( zeros(3,n_time,n_foods) );
 
 [ s_actual_all ] = deal( zeros(n_time,1) );
 
@@ -26,8 +27,8 @@ for i=3:n_time                                               % begin at time ste
         else
             s_required_j = 0;
         end
-        [ y_supply(i,j),s_actual(i,j),y_demand(i,j),y_cust(i,j),y_waste(i,j),...
-            s_actual_end(i,j),m_profit(i,j),c_cust_profit(i,j),...
+        [ y_supply(i,j),s_actual(i,j),y_demand(i,j),y_demands(:,i,j),y_cust(i,j),y_waste(i,j),...
+            s_actual_end(i,j),m_profit(i,j),m_profit_actual(i,j),c_cust_profit(i,j),...
             m_profits(:,i,j),y_resupplies(:,i,j),c_cust_opt(:,i,j) ] = ...
             calc_foods( a(j), p(:,j), s_required_j, y0(j), c_store(j), ...
             y_demand(i-1,j), s_actual_end(i-1,j), s_actual_all(i-2), c_custs );
@@ -35,7 +36,8 @@ for i=3:n_time                                               % begin at time ste
     s_actual_all(i) = sum(s_actual(i,:));                    % add all of s_actual
 end
 
-plot_results( y_supply,s_actual,y_demand,y_cust,y_waste,m_profit,c_cust_profit,lbl_foods,n_foods )
+plot_results( y_supply,s_actual,s_required,y_demand,y_demands,y_cust,y_waste,m_profit_actual,c_cust_profit,...
+    lbl_foods,n_foods )
 
 plot_results_3D( c_custs, m_profits,    c_cust_profit, n_time, n_foods, lbl_foods, ...
     200, 'profits', c_cust_opt )
@@ -69,7 +71,7 @@ for j=1:n_foods
 end
 
 
-function plot_results( y_supply,s_actual,y_demand,c_cust_profit,y_waste,m_profit,c_cust, ...
+function plot_results( y_supply,s_actual,s_required,y_demand,y_demands,c_cust_profit,y_waste,m_profit,c_cust, ...
     lbl_foods,n_foods )
 %----------------------------------------------------------------------------------------------
 % plot all results
@@ -96,63 +98,102 @@ subplot(4,2,7), xlabel('weeks')
 subplot(4,2,8), ax = gca; ax.XTick = []; ax.YTick = []; ax.Visible = 'off';
 subplot(4,2,1), legend(lbl_foods,'NumColumns',2,'Position',ax.Position)
 
+subplot(4,2,5), hold on, ax = gca; plot(ax.XLim,s_required*[1 1],'k--'), hold off
+subplot(4,2,2), hold on, for l=1:3, plot(squeeze(y_demands(l,:,:)),'k:'), end, hold off
 
-function [ y_supply,s_actual,y_demand,y_cust,y_waste,s_actual_end,m_profit,c_cust_profit, ...
+
+function [ y_supply,s_actual,y_demand,y_demands,y_cust,y_waste,s_actual_end,m_profit,m_profit_actual,c_cust_profit, ...
     m_profits,y_resupplies,c_cust_opt ] = ...
     calc_foods( a, p, s_required, y0, c_store, ...
     y_demand_1, s_actual_end_1, s_actual_all_2, c_custs )
 %----------------------------------------------------------------------------------------------
 % calculate y, s, m for a specific food
 %----------------------------------------------------------------------------------------------
+flag_optimizer = false;
+
 y_supply  = max([
     s_required - s_actual_end_1                              % satisfy s_required
     y_demand_1 - s_actual_end_1                              % satisfy previous week demand
     0 ]);                                                    % must be positive
 s_actual   = y_supply + s_actual_end_1;                      % s at beginning of week
 
-[ m_profits_neg,y_resupplies ] = ...
+[ m_profits_neg,~,y_resupplies ] = ...
     profit_neg( c_custs, s_required, y0, a, p, s_actual_all_2, s_actual, c_store );
 m_profits = -m_profits_neg;
 
-c_cust_profit = fminbnd( @(c1) ...
-    profit_neg( c1, s_required, y0, a, p, s_actual_all_2, s_actual, c_store ), ...
-    0, c_custs(end) );
+if flag_optimizer
+    c_cust_profit = fminbnd( @(c1) ...
+        profit_neg( c1, s_required, y0, a, p, s_actual_all_2, s_actual, c_store ), ...
+        0, c_custs(end) );
+else
+    [ ~,m_profits_index ] = max(m_profits);
+    c_cust_profit = c_custs(m_profits_index);
+end
 
-[ m_profit_neg,y_resupply,c_cust_opt,y_demand,y_cust,y_waste,s_actual_end ] = ...
+[ m_profit_neg,m_profit_actual,y_resupply,c_cust_opt,y_demand,y_demands,y_cust,y_waste,s_actual_end ] = ...
     profit_neg( c_cust_profit, s_required, y0, a, p, s_actual_all_2, s_actual, c_store );
 m_profit = -m_profit_neg;
 
+return
+%----------------------------------------------------------------------------------------------
+% Diagnostic plots
+%----------------------------------------------------------------------------------------------
+fig = figure(99); fig.Name = 'diagnostics'; clf
+subplot(2,1,1), plot(c_custs,m_profits,'b-',c_cust_profit,m_profit,'ro'), hold on
+subplot(2,1,2), plot(c_custs,y_resupplies,'b-',c_cust_profit,y_resupplies(m_profits_index),'ro'), hold on
+%----------------------------------------------------------------------------------------------
+% End of diagnostic plots
+%----------------------------------------------------------------------------------------------
 
-function [ m_profit_neg,y_resupply,c_cust_opt,y_demand,y_cust,y_waste,s_actual_end ] = ...
+
+function [ m_profit_neg,m_profit_actual,y_resupply,c_cust_opt,y_demand,y_demands,y_cust_actual,...
+    y_waste,s_actual_end ] = ...
     profit_neg( c_cust_1, s_required, y0, a, p, s_actual_all_2, s_actual, c_store )
 %----------------------------------------------------------------------------------------------
-% negative profit
+% Negative profit
+%----------------------------------------------------------------------------------------------
+% Initialize parameters
 %----------------------------------------------------------------------------------------------
 y0_all      = y0   + p(18)*s_actual_all_2;                   % extra demand due to other foods
 c_storage   = p(4) + p(17)*s_actual_all_2;                   % extra cost due to all foods
 c_store_all = c_store + p(2);                                % purchase cost + delivery
 
+%----------------------------------------------------------------------------------------------
+% Analytical solutions to the optimal demand
+%----------------------------------------------------------------------------------------------
 y_demands(1) = y0_all/2 - (c_store_all + c_storage)/(2*a);   % y_demand > s_actual
 y_demands(2) = y0_all/2 - (c_store_all            )/(2*a);   % intermediate
 y_demands(3) = y0_all/2;                                     % y_demand < s_actual/n_life
 
 c_cust_opt   = -(y_demands - y0_all)*a;                      % analytical optima
 
-y_demand  = y0_all - c_cust_1/a;                             % price->decrease, s_all->increase
-y_cust    = min( y_demand, s_actual );                       % not useful for profit maximization
-y_cust    = y_demand;
-s_exp     = s_actual/p(16);                                  % amount that expires
-y_waste   = max( s_exp-y_cust, 0 );                          % amount that is discarded
-s_actual_end = s_actual - (y_cust + y_waste);                % amount at end of week
-y_resupply   = max(s_required,y_cust) - s_actual_end;        % amount needed for next week
-m_profit     = ...
-      y_cust   .*c_cust_1 ...                                % revenue
-    - y_resupply*c_store_all ...                             % cost of replenishing y
-    - s_actual  *c_storage;                                  % cost of storage
+%----------------------------------------------------------------------------------------------
+% Numerical analysis of demand using:
+%   Unconstrained purchasing (assume store doesn't run out) for long-term profit maximization
+%   Constrained purchasing (used to compute actual profit)
+%----------------------------------------------------------------------------------------------
+y_demand       = y0_all - c_cust_1/a;                        % price->decrease, s_all->increase
+y_cust_actual  = min( y_demand, s_actual );                  % amount purchased (constrained)
+y_cust         = y_demand;                                   % amount purchased (to maximize profit)
+s_exp          = s_actual/p(16);                             % amount that expires
+y_waste        = max( s_exp-y_cust_actual, 0 );              % amount that is discarded
+s_actual_end   = s_actual - (y_cust_actual + y_waste);       % amount at end of week
+s_actual_begin = max(s_required,y_cust);                     % amount at beginning of week
+y_resupply     = y_cust + max( s_exp-y_cust, 0 );            % amount needed (to maximize profit)
+y_resupply_actual = s_actual_begin - s_actual_end;           % amount needed (actual)
+m_profit       = ...
+      y_cust       .*c_cust_1 ...                            % revenue
+    - y_resupply    *c_store_all ...                         % cost of replenishing y
+    - s_actual_begin*c_storage;                              % cost of storage
 m_profit_neg = -m_profit;
+m_profit_actual= ...
+      y_cust_actual   .*c_cust_1 ...                         % actual revenue
+    - y_resupply_actual*c_store_all ...                      % actual cost of replenishing y
+    - s_actual_begin   *c_storage;                           % cost of storage    
 
 %----------------------------------------------------------------------------------------------
-% simple calculation:
+% Sample calculation for the analytical solution:
+%----------------------------------------------------------------------------------------------
 %   y     = y_demand = (y0 - c/a)
 %   m     = y*(c - c_store - c_storage) = (y0 - c/a)*(c - c_store - c_storage)
 %   dm/dc = y0     + (c_store + c_storage)/a - 2c/a = 0
